@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlarmClockCheck, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,7 @@ export function DateTimePicker() {
   });
 
   const [time, setTime] = useState({ hour: "00", minute: "00", second: "00" });
+  // const [isCalendarOpen, setIsCalendarOpen] = useState(false); // Estado para verificar se o calendário está aberto
   const isClearEnabled = Boolean(
     form.watch("dateTime") && time.hour && time.minute && time.second
   );
@@ -115,10 +116,51 @@ export function DateTimePicker() {
     }));
   }, []);
 
+  const handleDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!date) return; // Garante que 'date' não seja undefined
+      const now = new Date();
+      const brasiliaTime = set(now, {
+        hours: now.getUTCHours() - 3,
+        minutes: now.getUTCMinutes(),
+        seconds: now.getUTCSeconds(),
+      });
+
+      form.setValue("dateTime", date);
+      setTime({
+        hour: brasiliaTime.getHours().toString().padStart(2, "0"),
+        minute: brasiliaTime.getMinutes().toString().padStart(2, "0"),
+        second: brasiliaTime.getSeconds().toString().padStart(2, "0"),
+      });
+    },
+    [form]
+  );
+
   const handleClear = useCallback(() => {
     form.reset({ dateTime: undefined, hour: 0, minute: 0, second: 0 });
     setTime({ hour: "00", minute: "00", second: "00" });
   }, [form]);
+
+  // const handleCalendarOpen = () => {
+  //   setIsCalendarOpen(true);
+  // };
+
+  // const handleCalendarClose = () => {
+  //   setIsCalendarOpen(false);
+  // };
+
+  // Preenchimento automático da data e hora ao abrir o calendário:
+  // useEffect(() => {
+  //   if (isCalendarOpen && !form.watch("dateTime")) {
+  //     const today = new Date();
+  //     form.setValue("dateTime", today);
+  //     setTime({
+  //       hour: today.getHours().toString().padStart(2, "0"),
+  //       minute: today.getMinutes().toString().padStart(2, "0"),
+  //       second: today.getSeconds().toString().padStart(2, "0"),
+  //     });
+  //   }
+  // }, [isCalendarOpen, form]);
 
   return (
     <Form {...form}>
@@ -132,7 +174,11 @@ export function DateTimePicker() {
           render={({ field }: any) => (
             <FormItem className="flex flex-col">
               <FormLabel className="text-left">DateTime</FormLabel>
-              <Popover>
+              <Popover
+              // onOpenChange={(open) =>
+              //   open ? handleCalendarOpen() : handleCalendarClose()
+              // }
+              >
                 <FormControl>
                   <PopoverTrigger asChild>
                     <Button
@@ -157,7 +203,7 @@ export function DateTimePicker() {
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={field.onChange}
+                    onSelect={handleDateSelect}
                     initialFocus
                   />
                   <div className="p-3 border-t border-border">
