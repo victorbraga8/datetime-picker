@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { format } from "date-fns";
@@ -24,13 +25,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const formSchema = z.object({
-  dateTime: z.date(),
-  hour: z.number().min(0).max(23),
-  minute: z.number().min(0).max(59),
-  second: z.number().min(0).max(59),
+  dateTime: z.date({ required_error: "Data e hora são obrigatórias." }),
+  hour: z
+    .number()
+    .min(0, { message: "Hora deve ser entre 0 e 23." })
+    .max(23, { message: "Hora deve ser entre 0 e 23." })
+    .default(0),
+  minute: z
+    .number()
+    .min(0, { message: "Minuto deve ser entre 0 e 59." })
+    .max(59, { message: "Minuto deve ser entre 0 e 59." })
+    .default(0),
+  second: z
+    .number()
+    .min(0, { message: "Segundo deve ser entre 0 e 59." })
+    .max(59, { message: "Segundo deve ser entre 0 e 59." })
+    .default(0),
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
@@ -39,34 +52,49 @@ export function DateTimePicker() {
   const { toast } = useToast();
   const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      hour: 0,
-      minute: 0,
-      second: 0,
-    },
+    defaultValues: { hour: 0, minute: 0, second: 0 },
   });
 
   const [time, setTime] = useState({ hour: "00", minute: "00", second: "00" });
+  const isClearEnabled = Boolean(
+    form.watch("dateTime") && time.hour && time.minute && time.second
+  );
 
-  function onSubmit(data: FormSchemaType) {
-    const fullDate = data.dateTime;
-    const formattedDate = format(fullDate, "yyyy-MM-dd", { locale: ptBR });
-    const formattedTime = `${time.hour}:${time.minute}:${time.second}`;
-    toast({
-      title: "Você enviou os seguintes valores:",
-      description: (
-        <pre>
-          <code>
-            {JSON.stringify(
-              { data: formattedDate, horário: formattedTime },
-              null,
-              2
-            )}
-          </code>
-        </pre>
-      ),
-    });
-  }
+  const onSubmit = useCallback(
+    (data: FormSchemaType) => {
+      const formattedDate = format(data.dateTime, "yyyy-MM-dd", {
+        locale: ptBR,
+      });
+      const formattedTime = `${time.hour}:${time.minute}:${time.second}`;
+      toast({
+        title: "Você enviou os seguintes valores:",
+        description: (
+          <pre>
+            <code>
+              {JSON.stringify(
+                { data: formattedDate, horário: formattedTime },
+                null,
+                2
+              )}
+            </code>
+          </pre>
+        ),
+      });
+    },
+    [time, toast]
+  );
+
+  const handleErrors = useCallback(
+    (errors: any) => {
+      Object.values(errors).forEach((error: any) =>
+        toast({
+          title: "Erro de Validação",
+          description: error.message || "Erro desconhecido na validação.",
+        })
+      );
+    },
+    [toast]
+  );
 
   useEffect(() => {
     form.setValue("hour", parseInt(time.hour));
@@ -74,26 +102,29 @@ export function DateTimePicker() {
     form.setValue("second", parseInt(time.second));
   }, [time, form]);
 
-  const handleTimeChange = (field: string, value: string) => {
+  const handleTimeChange = useCallback((field: string, value: string) => {
     let newValue = parseInt(value);
-
     if (field === "hour") {
       newValue = newValue < 0 ? 23 : newValue > 23 ? 0 : newValue;
     } else if (field === "minute" || field === "second") {
       newValue = newValue < 0 ? 59 : newValue > 59 ? 0 : newValue;
     }
-
     setTime((prevTime) => ({
       ...prevTime,
       [field]: newValue.toString().padStart(2, "0"),
     }));
-  };
+  }, []);
+
+  const handleClear = useCallback(() => {
+    form.reset({ dateTime: undefined, hour: 0, minute: 0, second: 0 });
+    setTime({ hour: "00", minute: "00", second: "00" });
+  }, [form]);
 
   return (
     <Form {...form}>
       <form
         className="flex items-end gap-4 justify-center"
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, handleErrors)}
       >
         <FormField
           control={form.control}
@@ -113,9 +144,9 @@ export function DateTimePicker() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {field.value ? (
-                        `${format(field.value, "P", { locale: ptBR })} ${
-                          time.hour
-                        }:${time.minute}:${time.second}`
+                        `${format(field.value, "P", {
+                          locale: ptBR,
+                        })} ${time.hour}:${time.minute}:${time.second}`
                       ) : (
                         <span>Escolha uma data e hora</span>
                       )}
@@ -172,6 +203,14 @@ export function DateTimePicker() {
           )}
         />
         <Button type="submit">Submit</Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleClear}
+          disabled={!isClearEnabled}
+        >
+          Clear
+        </Button>
       </form>
     </Form>
   );
