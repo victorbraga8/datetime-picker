@@ -1,5 +1,4 @@
-import { DateTimePicker } from "@/components/picker/date";
-
+import { DateTimePicker } from "@/components/picker/datetime";
 
 export default function Home() {
   return (

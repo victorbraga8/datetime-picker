@@ -55,9 +55,11 @@ export function DateTimePicker() {
     defaultValues: { hour: 0, minute: 0, second: 0 },
   });
 
+  // Estado para verificar se o calendário está aberto
+  // const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [time, setTime] = useState({ hour: "00", minute: "00", second: "00" });
-  // const [isCalendarOpen, setIsCalendarOpen] = useState(false); // Estado para verificar se o calendário está aberto
-  const isClearEnabled = Boolean(
+
+  const isEnabled = Boolean(
     form.watch("dateTime") && time.hour && time.minute && time.second
   );
 
@@ -118,7 +120,7 @@ export function DateTimePicker() {
 
   const handleDateSelect = useCallback(
     (date: Date | undefined) => {
-      if (!date) return; // Garante que 'date' não seja undefined
+      if (!date) return;
       const now = new Date();
       const brasiliaTime = set(now, {
         hours: now.getUTCHours() - 3,
@@ -149,7 +151,6 @@ export function DateTimePicker() {
   //   setIsCalendarOpen(false);
   // };
 
-  // Preenchimento automático da data e hora ao abrir o calendário:
   // useEffect(() => {
   //   if (isCalendarOpen && !form.watch("dateTime")) {
   //     const today = new Date();
@@ -248,12 +249,14 @@ export function DateTimePicker() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={!isEnabled}>
+          Submit
+        </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={handleClear}
-          disabled={!isClearEnabled}
+          disabled={!isEnabled}
         >
           Clear
         </Button>
