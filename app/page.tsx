@@ -1,4 +1,12 @@
-import { DateTimePicker } from "@/components/picker/datetime";
+import dynamic from "next/dynamic";
+
+const DateTimePicker = dynamic(
+  () =>
+    import("@/components/picker/datetime").then((mod) => mod.DateTimePicker),
+  {
+    loading: () => <p>Carregando...</p>,
+  }
+);
 
 export default function Home() {
   return (
