@@ -42,6 +42,10 @@ In this project, we implemented a customized DateTime picker component with the 
 4. **Local Date and Time Handling**:
    - The picker captures and displays the local date and time based on the user's system settings, without manual adjustments for time zones. This ensures consistency and simplicity, especially for users across different time zones.
 
+## Online Access
+
+This project is deployed and can be accessed online at: [https://datetime-picker-ten.vercel.app/](https://datetime-picker-ten.vercel.app/)
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
